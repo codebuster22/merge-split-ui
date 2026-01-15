@@ -1,4 +1,12 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import {
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useAccount,
+} from 'wagmi';
+import { encodeFunctionData } from 'viem';
+import { useWalletMode } from '../contexts/WalletModeContext';
+import { useSafeTransaction } from './useSafeTransaction';
 import {
   CTFVaultAddress,
   ConditionalTokensAddress,
@@ -6,55 +14,90 @@ import {
 } from '../constants';
 
 export function useApprovals() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
+  const { mode, activeAddress } = useWalletMode();
+  const {
+    executeSafeTransaction,
+    state: safeState,
+    reset: resetSafe,
+  } = useSafeTransaction();
 
-  // Check if vault is approved for CTF (ERC-1155)
+  // Check if vault is approved for CTF (from active address - EOA or Safe)
   const { data: isApproved, refetch: refetchApproval } = useReadContract({
     address: ConditionalTokensAddress as `0x${string}`,
     abi: ConditionalTokensAbi,
     functionName: 'isApprovedForAll',
-    args: [address!, CTFVaultAddress as `0x${string}`],
+    args: [activeAddress!, CTFVaultAddress as `0x${string}`],
     query: {
-      enabled: isConnected && !!address,
+      enabled: isConnected && !!activeAddress,
     },
   });
 
-  // Approve vault for CTF
+  // EOA approval via wagmi
   const {
     writeContract: writeApprove,
     data: approveHash,
-    isPending: isApprovePending,
-    isError: isApproveError,
-    error: approveError,
-    reset: resetApprove,
+    isPending: isEoaApprovePending,
+    isError: isEoaApproveError,
+    error: eoaApproveError,
+    reset: resetEoaApprove,
   } = useWriteContract();
 
-  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } =
+  const { isLoading: isEoaApproveConfirming, isSuccess: isEoaApproveSuccess } =
     useWaitForTransactionReceipt({
       hash: approveHash,
     });
 
-  const approve = () => {
-    writeApprove({
-      address: ConditionalTokensAddress as `0x${string}`,
-      abi: ConditionalTokensAbi,
-      functionName: 'setApprovalForAll',
-      args: [CTFVaultAddress as `0x${string}`, true],
-    });
+  const approve = async () => {
+    if (mode === 'eoa') {
+      // Existing EOA flow
+      writeApprove({
+        address: ConditionalTokensAddress as `0x${string}`,
+        abi: ConditionalTokensAbi,
+        functionName: 'setApprovalForAll',
+        args: [CTFVaultAddress as `0x${string}`, true],
+      });
+    } else {
+      // Safe flow - execute approval from Safe
+      const data = encodeFunctionData({
+        abi: ConditionalTokensAbi,
+        functionName: 'setApprovalForAll',
+        args: [CTFVaultAddress as `0x${string}`, true],
+      });
+
+      await executeSafeTransaction(
+        ConditionalTokensAddress as `0x${string}`,
+        data
+      );
+    }
   };
 
+  // Determine pending/success state based on mode
+  const isPending =
+    mode === 'eoa'
+      ? isEoaApprovePending || isEoaApproveConfirming
+      : safeState.isPending;
+
+  const isSuccess = mode === 'eoa' ? isEoaApproveSuccess : safeState.isSuccess;
+  const isError = mode === 'eoa' ? isEoaApproveError : safeState.isError;
+  const error = mode === 'eoa' ? eoaApproveError : safeState.error;
+
   // Refetch approval status after successful approval
-  if (isApproveSuccess) {
+  if (isSuccess) {
     refetchApproval();
-    resetApprove();
+    if (mode === 'eoa') {
+      resetEoaApprove();
+    } else {
+      resetSafe();
+    }
   }
 
   return {
     isApproved: isApproved ?? false,
     approve,
-    isApprovePending: isApprovePending || isApproveConfirming,
-    isApproveError,
-    approveError,
+    isApprovePending: isPending,
+    isApproveError: isError,
+    approveError: error,
     refetchApproval,
   };
 }

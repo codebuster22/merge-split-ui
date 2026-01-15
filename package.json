@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@polymarket/builder-relayer-client": "^0.0.8",
+    "@safe-global/protocol-kit": "^6.1.2",
+    "@safe-global/types-kit": "^3.0.0",
     "@tanstack/react-query": "^5.60.0",
+    "ethers": "^5.7.2",
     "framer-motion": "^11.12.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

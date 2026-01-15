@@ -1,4 +1,5 @@
 import { useReadContracts, useAccount } from 'wagmi';
+import { useWalletMode } from '../contexts/WalletModeContext';
 import {
   CTFVaultAddress,
   CTFVaultAbi,
@@ -10,7 +11,8 @@ import {
 import type { UserState } from '../types';
 
 export function useUserState() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
+  const { activeAddress } = useWalletMode();
 
   const { data, isLoading, isError, error, refetch } = useReadContracts({
     contracts: [
@@ -19,39 +21,39 @@ export function useUserState() {
         address: CTFVaultAddress as `0x${string}`,
         abi: CTFVaultAbi,
         functionName: 'balanceOf',
-        args: [address!],
+        args: [activeAddress!],
       },
       // YES deposits
       {
         address: CTFVaultAddress as `0x${string}`,
         abi: CTFVaultAbi,
         functionName: 'userYesDeposits',
-        args: [address!],
+        args: [activeAddress!],
       },
       // NO deposits
       {
         address: CTFVaultAddress as `0x${string}`,
         abi: CTFVaultAbi,
         functionName: 'userNoDeposits',
-        args: [address!],
+        args: [activeAddress!],
       },
       // YES token balance (ERC-1155)
       {
         address: ConditionalTokensAddress as `0x${string}`,
         abi: ConditionalTokensAbi,
         functionName: 'balanceOf',
-        args: [address!, BigInt(YES_TOKEN_ID)],
+        args: [activeAddress!, BigInt(YES_TOKEN_ID)],
       },
       // NO token balance (ERC-1155)
       {
         address: ConditionalTokensAddress as `0x${string}`,
         abi: ConditionalTokensAbi,
         functionName: 'balanceOf',
-        args: [address!, BigInt(NO_TOKEN_ID)],
+        args: [activeAddress!, BigInt(NO_TOKEN_ID)],
       },
     ],
     query: {
-      enabled: isConnected && !!address,
+      enabled: isConnected && !!activeAddress,
       refetchInterval: 10000,
     },
   });
@@ -74,6 +76,6 @@ export function useUserState() {
     error,
     refetch,
     isConnected,
-    address,
+    address: activeAddress,
   };
 }

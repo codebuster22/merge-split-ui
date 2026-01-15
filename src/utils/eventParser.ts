@@ -36,7 +36,7 @@ function tryDecodeLog(log: Log): DecodedEvent | null {
       return {
         eventName: decoded.eventName,
         args: decoded.args as Record<string, unknown>,
-        address: log.address,
+        address: log.address as `0x${string}`,
       };
     } catch {
       // Not a vault event
@@ -54,7 +54,7 @@ function tryDecodeLog(log: Log): DecodedEvent | null {
       return {
         eventName: decoded.eventName,
         args: decoded.args as Record<string, unknown>,
-        address: log.address,
+        address: log.address as `0x${string}`,
       };
     } catch {
       // Not a CTF event
@@ -72,7 +72,7 @@ function tryDecodeLog(log: Log): DecodedEvent | null {
       return {
         eventName: decoded.eventName,
         args: decoded.args as Record<string, unknown>,
-        address: log.address,
+        address: log.address as `0x${string}`,
       };
     } catch {
       // Not a USDC event
