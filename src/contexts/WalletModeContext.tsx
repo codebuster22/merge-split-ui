@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { useAccount } from 'wagmi';
 import { useSafeStatus } from '../hooks/useSafeStatus';
 import type { Address } from 'viem';
@@ -26,14 +26,28 @@ export function WalletModeProvider({ children }: WalletModeProviderProps) {
   const { address: eoaAddress, isConnected } = useAccount();
   const { safeAddress, isDeployed, isLoading } = useSafeStatus();
 
-  const [mode, setModeInternal] = useState<WalletMode>('eoa');
+  const [mode, setModeInternal] = useState<WalletMode>('safe');
+  const hasInitialized = useRef(false);
 
-  // Reset to EOA mode when disconnected or Safe becomes unavailable
+  // Auto-switch to Safe on initial connection if available, fall back to EOA if not
   useEffect(() => {
-    if (!isConnected || (mode === 'safe' && !isDeployed)) {
+    if (!isConnected) {
+      // Reset for next connection
+      hasInitialized.current = false;
+      setModeInternal('safe');
+    } else if (!isLoading && !hasInitialized.current) {
+      // Initial setup after Safe status is loaded
+      hasInitialized.current = true;
+      if (isDeployed) {
+        setModeInternal('safe');
+      } else {
+        setModeInternal('eoa');
+      }
+    } else if (!isDeployed && mode === 'safe') {
+      // Fall back to EOA if Safe becomes unavailable
       setModeInternal('eoa');
     }
-  }, [isConnected, isDeployed, mode]);
+  }, [isConnected, isDeployed, isLoading, mode]);
 
   const value = useMemo<WalletModeContextType>(() => ({
     mode,

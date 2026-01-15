@@ -1,12 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '../wallet/ConnectButton';
-import { WalletModeSelector } from '../wallet/WalletModeSelector';
-import { ConditionName } from '../../constants';
+import { WalletDropdown } from '../wallet/WalletDropdown';
 
 export function Header() {
-  const { isConnected } = useAccount();
-
   return (
     <header className="bg-slate-800 border-b border-slate-700">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -40,15 +35,7 @@ export function Header() {
               </NavLink>
             </nav>
           </div>
-          <div className="flex items-center gap-3">
-            {isConnected && <WalletModeSelector />}
-            <ConnectButton />
-          </div>
-        </div>
-        <div className="pb-3 -mt-1">
-          <p className="text-sm text-slate-400">
-            Market: <span className="text-white">{ConditionName}</span>
-          </p>
+          <WalletDropdown />
         </div>
       </div>
     </header>
