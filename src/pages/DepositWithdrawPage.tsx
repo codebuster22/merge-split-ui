@@ -16,10 +16,8 @@ export function DepositWithdrawPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <VaultStatusCard />
-      <UserPositionCard />
-
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+      {/* Left Column - Action Forms */}
       <div className="card">
         <TabGroup
           tabs={tabs}
@@ -30,6 +28,12 @@ export function DepositWithdrawPage() {
         <div className="mt-6">
           {activeTab === 'deposit' ? <DepositForm /> : <WithdrawForm />}
         </div>
+      </div>
+
+      {/* Right Column - Read-only Data */}
+      <div className="space-y-6">
+        <VaultStatusCard />
+        <UserPositionCard />
       </div>
     </div>
   );

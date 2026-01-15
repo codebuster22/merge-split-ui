@@ -14,8 +14,8 @@ export function formatAmount(value: bigint, decimals: number = DefaultDecimals):
     return intPart.toLocaleString();
   }
 
-  // Pad decimal part with leading zeros and remove trailing zeros
-  const decStr = decPart.toString().padStart(decimals, '0').replace(/0+$/, '');
+  // Pad decimal part with leading zeros and round to 2 decimal places
+  const decStr = decPart.toString().padStart(decimals, '0').slice(0, 2);
   return `${intPart.toLocaleString()}.${decStr}`;
 }
 
